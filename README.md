@@ -8,6 +8,14 @@
 
 `ansible-playbook /vagrant/configs/ansible/provisioning.yml -u vagrant -i /vagrant/configs/ansible/hosts --private-key id_bionic`
 
+### Without user
+`ansible-playbook /vagrant/configs/ansible/provisioning.yml -i /vagrant/configs/ansible/hosts --private-key id_bionic`
+This command can be used if in hosts the variable ansible_user is defined
+
+### Without user and private key
+`ansible-playbook /vagrant/configs/ansible/provisioning.yml -i /vagrant/configs/ansible/hosts`
+This command can be used if in hosts the variable ansible_user and ansible_ssh_private_key_file are defined
+
 #### Playbook
 
 - hosts: indicates which hosts the configuration will be executed
