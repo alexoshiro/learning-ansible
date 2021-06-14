@@ -1,23 +1,44 @@
 ---
 - hosts: all
+  handlers:
+    - name: restart apache
+      service:
+        name: apache2
+        state: restarted
+      become: yes
+  
   tasks:
+    - name: Add PPA for php 5.6
+      apt_repository:
+        repo: 'ppa:ondrej/php'
+      become: yes
+
+    - name: 'update apt repository'
+      apt:
+        update_cache: yes
+      become: yes
+
     - name: 'Instala pacotes de dependencia do sistema operacional'
       apt:
         name:
-          - php5
+          - python-software-properties
+          - php5.6
           - apache2
           - libapache2-mod-php5
           - mysql-server-5.6
           - python-mysqldb
           - php5-mysql
         state: latest
+        update_cache: yes
       become: yes
+
     - name: 'Criar o banco de dados MySQL'
       mysql_db:
         name: wordpress_db
         login_user: root 
         state: present
       become: yes
+
     - name: 'Cria o usuário do MySQL'
       mysql_user:
         login_user: root
@@ -25,3 +46,42 @@
         password: "12345"
         priv: 'wordpress_db.*:ALL'
         state: present
+
+    - name: 'Baixa o arquivo de instalacao do Wordpress'
+      get_url:
+        url: 'https://wordpress.org/latest.tar.gz'
+        dest: '/tmp/wordpress.tar.gz'
+
+    - name: 'Descompacta o wordpress'
+      unarchive:
+        src: '/tmp/wordpress.tar.gz'
+        dest: /var/www/
+        remote_src: yes
+      become: yes
+      
+    - name: Copy a wp sample config for editing
+      copy:
+        src: '/var/www/wordpress/wp-config-sample.php'
+        dest: '/var/www/wordpress/wp-config.php'
+        remote_src: yes
+      become: yes
+
+    - name: 'Configura o wp-config com as entradas do banco de dados'     
+      replace:
+        path: '/var/www/wordpress/wp-config.php'
+        regexp: '{{item.regex}}'
+        replace: '{{item.value}}'
+        backup: yes
+      with_items:
+        - { regex: 'database_name_here', value: 'wordpress_db'}
+        - { regex: 'username_here', value: ' wordpress_user'}
+        - { regex: 'password_here', value: '12345'}
+      become: yes
+
+    - name: 'Configura Apache para servir o Wordpress'
+      copy:
+        src: '/vagrant/files/000-default.conf'
+        dest: '/etc/apache2/sites-available/000-default.conf'
+      become: yes
+      notify:
+        - restart apache
