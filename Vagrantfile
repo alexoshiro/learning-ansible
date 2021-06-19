@@ -12,6 +12,13 @@ Vagrant.configure("2") do |config|
             inline: "cat /vagrant/configs/id_bionic.pub >> .ssh/authorized_keys"
     end
 
+    config.vm.define "mysql" do |mysql|
+        mysql.vm.box = "ubuntu/trusty64"
+        mysql.vm.network "public_network", ip: "192.168.15.98"
+        mysql.vm.provision "shell",
+            inline: "cat /vagrant/configs/id_bionic.pub >> .ssh/authorized_keys"
+    end
+
     config.vm.define "ansible" do |ansible|
         ansible.vm.box = "ubuntu/bionic64"
         ansible.vm.network "public_network", ip: "192.168.15.96"

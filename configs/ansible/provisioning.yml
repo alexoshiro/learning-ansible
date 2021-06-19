@@ -1,33 +1,18 @@
 ---
-- hosts: all
+- hosts: database
   handlers:
-    - name: restart apache
-      service:
-        name: apache2
+    - name: restart mysql
+      service: 
+        name: mysql
         state: restarted
       become: yes
-  
+
   tasks:
-    - name: Add PPA for php 5.6
-      apt_repository:
-        repo: 'ppa:ondrej/php'
-      become: yes
-
-    - name: 'update apt repository'
-      apt:
-        update_cache: yes
-      become: yes
-
     - name: 'Instala pacotes de dependencia do sistema operacional'
       apt:
         name:
-          - python-software-properties
-          - php5.6
-          - apache2
-          - libapache2-mod-php5
           - mysql-server-5.6
           - python-mysqldb
-          - php5-mysql
         state: latest
         update_cache: yes
       become: yes
@@ -46,10 +31,43 @@
         password: "12345"
         priv: 'wordpress_db.*:ALL'
         state: present
+        host: "{{ item }}"
+      with_items:
+        - 'localhost'
+        - '127.0.0.1'
+        - '192.168.15.99'
+
+    - name: 'Configura MySQL para aceitar conexões remotas'
+      copy:
+        src: '/vagrant/files/my.cnf'
+        dest: '/etc/mysql/my.cnf'
+      become: yes
+      notify:
+        - restart mysql
+    
+- hosts: wordpress
+  handlers:
+    - name: restart apache
+      service:
+        name: apache2
+        state: restarted
+      become: yes
+  
+  tasks:
+    - name: 'Instala pacotes de dependencia do sistema operacional'
+      apt:
+        name:
+          - php5
+          - apache2
+          - libapache2-mod-php5
+          - php5-mysql
+        state: latest
+        update_cache: yes
+      become: yes
 
     - name: 'Baixa o arquivo de instalacao do Wordpress'
       get_url:
-        url: 'https://wordpress.org/latest.tar.gz'
+        url: 'https://wordpress.org/wordpress-4.9.18.tar.gz'
         dest: '/tmp/wordpress.tar.gz'
 
     - name: 'Descompacta o wordpress'
@@ -74,8 +92,9 @@
         backup: yes
       with_items:
         - { regex: 'database_name_here', value: 'wordpress_db'}
-        - { regex: 'username_here', value: ' wordpress_user'}
+        - { regex: 'username_here', value: 'wordpress_user'}
         - { regex: 'password_here', value: '12345'}
+        - { regex: 'localhost', value: '192.168.15.98'}
       become: yes
 
     - name: 'Configura Apache para servir o Wordpress'
