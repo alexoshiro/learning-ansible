@@ -1,0 +1,11 @@
+---
+- name: 'Instala pacotes de dependencia do sistema operacional'
+  apt:
+    name:
+      - php5
+      - apache2
+      - libapache2-mod-php5
+      - php5-mysql
+    state: latest
+    update_cache: yes
+  become: yes
